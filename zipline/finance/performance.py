@@ -412,7 +412,7 @@ class PerformanceTracker(object):
         # increment the day counter before we move markers forward.
         self.day_count += 1.0
 
-        # Take a snapshot of our current peformance to return to the
+        # Take a snapshot of our current performance to return to the
         # browser.
         daily_update = self.to_dict()
 
@@ -526,26 +526,30 @@ class Position(object):
         # ie, 33.333
         raw_share_count = self.amount * ratio
 
-        # ie, 0.333
-        fractional_share_count = Decimal(str(raw_share_count)) % 1
-
         # ie, 33
         full_share_count = math.floor(raw_share_count)
 
+        # ie, 0.333
+        #fractional_share_count = float(Decimal(str(raw_share_count)) % 1)
+        fractional_share_count = raw_share_count - full_share_count
+
         # adjust the cost basis to the nearest cent # FIXME check this
         # ie, 60.0
-        new_cost_basis = float(Decimal(str(self.cost_basis / ratio)).quantize(Decimal('.01')))
+        new_cost_basis = float(Decimal(str(self.cost_basis / ratio))
+                               .quantize(Decimal('.01')))
 
         # adjust the last sale price
-        new_last_sale_price = float(Decimal(str(self.last_sale_price / ratio)).quantize(Decimal('.01')))
+        new_last_sale_price = float(Decimal(str(self.last_sale_price / ratio))
+                                    .quantize(Decimal('.01')))
 
         self.cost_basis = new_cost_basis
         self.last_sale_price = new_last_sale_price
         self.amount = full_share_count
 
-        # return the fractional share count, which will be 
-        # converted into cash
-        return (fractional_share_count_share_count * new_cost_basis)
+        # return the leftover cash, which will be converted into cash
+        # (rounded to the nearest cent)
+        return float(Decimal(fractional_share_count * new_cost_basis)
+                     .quantize(Decimal('.01')))
 
     def update(self, txn):
         if(self.sid != txn.sid):
@@ -665,9 +669,10 @@ class PerformancePeriod(object):
         self.positions[div.sid].add_dividend(div)
 
     def handle_split(self, split):
-        # Make the position object handle the split. It returns the 
+        # Make the position object handle the split. It returns the
         # leftover cash from a fractional share, if there is any.
         leftover_cash = self.positions[split.sid].handle_split(split)
+
         if leftover_cash > 0:
             self.handle_cash_payment(leftover_cash)
 

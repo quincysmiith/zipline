@@ -86,6 +86,49 @@ def calculate_results(host, events):
     return results
 
 
+class TestSplitPerformance(unittest.TestCase):
+    def setUp(self):
+        self.sim_params, self.dt, self.end_dt = \
+            create_random_simulation_parameters()
+
+        self.sim_params.capital_base = 10e3
+
+        self.benchmark_events = benchmark_events_in_range(self.sim_params)
+
+    def test_split_long_position(self):
+        with trading.TradingEnvironment():
+            events = factory.create_trade_history(
+                1,
+                [20, 20, 20, 20, 20],
+                [100, 100, 100, 100, 100],
+                oneday,
+                self.sim_params
+            )
+
+            # # set up a long position in sid 1
+            # # 100 shares at $20 apiece = $2000 position
+            events.insert(0, create_txn(events[0], 20, 100))
+            #events.insert(0, factory.create_txn(1, 100, 20, self.dt))
+            events.insert(1,
+                          factory.create_split(1, 0.33333,
+                          events[0].dt + datetime.timedelta(days=1)))
+
+            results = calculate_results(self, events)
+
+            # should have 33 shares at $60 apiece
+            # and $20 in cash
+            self.assertEqual(5, len(results))
+            latest_positions = results[4]['daily_perf']['positions']
+            self.assertEqual(1, len(latest_positions))
+
+            # check the last position to make sure it's been updated
+            position = latest_positions[0]
+            self.assertEqual(1, position['sid'])
+            self.assertEqual(33, position['amount'])
+            self.assertEqual(60, position['cost_basis'])
+            self.assertEqual(60, position['last_sale_price'])
+
+
 class TestDividendPerformance(unittest.TestCase):
 
     def setUp(self):
