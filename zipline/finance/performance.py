@@ -132,7 +132,6 @@ omitted).
 
 import logbook
 import math
-from decimal import Decimal
 
 import numpy as np
 import pandas as pd
