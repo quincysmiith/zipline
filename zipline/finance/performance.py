@@ -535,12 +535,10 @@ class Position(object):
 
         # adjust the cost basis to the nearest cent # FIXME check this
         # ie, 60.0
-        new_cost_basis = float(Decimal(str(self.cost_basis / ratio))
-                               .quantize(Decimal('.01')))
+        new_cost_basis = round(self.cost_basis / ratio, 2)
 
         # adjust the last sale price
-        new_last_sale_price = float(Decimal(str(self.last_sale_price / ratio))
-                                    .quantize(Decimal('.01')))
+        new_last_sale_price = round(self.last_sale_price / ratio, 2)
 
         self.cost_basis = new_cost_basis
         self.last_sale_price = new_last_sale_price
@@ -548,8 +546,7 @@ class Position(object):
 
         # return the leftover cash, which will be converted into cash
         # (rounded to the nearest cent)
-        return float(Decimal(fractional_share_count * new_cost_basis)
-                     .quantize(Decimal('.01')))
+        return round(float(fractional_share_count * new_cost_basis), 2)
 
     def update(self, txn):
         if(self.sid != txn.sid):

@@ -100,13 +100,11 @@ class AlgorithmSimulator(object):
                 self.algo.perf_tracker.set_date(date)
                 self.algo.blotter.set_date(date)
 
-                # positions is in self.algo.perf_tracker
-                # orders are in self.algo.blotter
-
-                # blotter tests in test_finance
-                # perftracker tests in test_perf_tracking
-
-                # look at thomas' most recent commit
+                # in both warmup and regular mode, need to adjust open
+                # orders in event of a split
+                for event in snapshot:
+                    if event.type == DATASOURCE_TYPE.SPLIT:
+                        self.algo.blotter.process_split(event)
 
                 # If we're still in the warmup period.  Use the event to
                 # update our universe, but don't yield any perf messages,
